@@ -1,0 +1,59 @@
+{
+  "name": "hackobot",
+  "version": "1.0.0",
+  "description": "Autonomous Smart Money Intelligence Agent - Powered by Nansen CLI",
+  "main": "src/index.js",
+  "bin": {
+    "hackobot": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "demo": "node scripts/smart-demo.js",
+    "full-demo": "node scripts/full-demo.js",
+    "scan": "node src/index.js scan",
+    "ghostnet": "node src/index.js ghostnet --chain ethereum",
+    "dashboard": "node src/server.js",
+    "monitor": "node src/server.js",
+    "whales": "node src/index.js whales",
+    "status": "node src/index.js status",
+    "test": "node test/demo.js",
+    "test:integration": "node scripts/test-integration.js",
+    "deploy:contract": "npx hardhat run scripts/deploy.js --network zero_g_testnet",
+    "deploy:mainnet": "npx hardhat run scripts/deploy.js --network zero_g_mainnet",
+    "proofAlpha:demo": "node scripts/proofAlpha-demo.js",
+    "setup:proofalpha": "bash scripts/setup-proofalpha.sh"
+  },
+  "keywords": [
+    "nansen",
+    "crypto",
+    "smart-money",
+    "blockchain",
+    "ai-agent",
+    "trading",
+    "defi",
+    "ethereum",
+    "solana"
+  ],
+  "author": "HackoBot Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/hackobot"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cthers": "^6.10.0",
+    "express": "^4.18.0",
+    "nansen-cli": "1.21.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "hardhat": "^2.19,
+    "express": "^4.18.0",
+    "nansen-cli": "1.21.0"
+  }
+}

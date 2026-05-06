@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+.cache/
+coverage/
+dist/
+.env
+DEMO_STRATEGY.md
+QUICK_DEMO.md
+schema.txt
