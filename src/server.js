@@ -117,6 +117,40 @@ app.get('/api/status', (req, res) => {
   res.json(watcher.getStatus());
 });
 
+function collectProofTrail() {
+  const results = watcher.getLastResults();
+  const proofTrail = Object.entries(results).flatMap(([chain, data]) => {
+    const proofs = Array.isArray(data?.proofs) ? data.proofs : [];
+    return proofs.map((proof) => ({
+      chain,
+      ...proof
+    }));
+  });
+
+  return proofTrail.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
+
+app.get('/api/proof/status', (req, res) => {
+  const status = watcher.getStatus();
+  const proofTrail = collectProofTrail();
+
+  res.json({
+    ...status,
+    proofTrailCount: proofTrail.length,
+    latestProof: proofTrail[0] || null
+  });
+});
+
+app.get('/api/proof/latest', (req, res) => {
+  const count = Math.min(25, Math.max(1, Number(req.query.count) || 5));
+  const proofTrail = collectProofTrail().slice(0, count);
+
+  res.json({
+    count: proofTrail.length,
+    proofs: proofTrail
+  });
+});
+
 // Get last results for a chain
 app.get('/api/results/:chain', (req, res) => {
   const results = watcher.getLastResults();

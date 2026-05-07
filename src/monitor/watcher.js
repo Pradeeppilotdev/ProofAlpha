@@ -286,6 +286,9 @@ class GhostNetWatcher {
             storageRoot: result.storageRoot,
             txHash: result.proofResult?.txHash,
             explorer: result.proofResult?.explorer,
+            walletCount: cluster.connectedWallets?.length || 0,
+            riskScore: clusterDetection.riskScore,
+            signalType: clusterDetection.signalType,
             timestamp: Date.now(),
           });
         } else {

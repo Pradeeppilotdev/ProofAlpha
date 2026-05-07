@@ -8,6 +8,8 @@ let sessionData = {
   wallets: [],
   clusters: [],
   overlaps: [],
+  proofs: [],
+  proofStats: null,
   apiCalls: null,
   runtime: null,
   timestamp: null
@@ -180,6 +182,76 @@ function renderOverlap(overlaps) {
   }).join('');
 }
 
+function renderProofTrail(proofs, proofStats = null) {
+  sessionData.proofs = Array.isArray(proofs) ? proofs : [];
+  sessionData.proofStats = proofStats;
+
+  const el = document.getElementById('proofBody');
+  const countEl = document.getElementById('proofCount');
+  const totalProofs = sessionData.proofs.length;
+
+  if (countEl) countEl.textContent = `${totalProofs} proofs`;
+  const statProofs = document.getElementById('statProofs');
+  if (statProofs) {
+    statProofs.textContent = proofStats?.proofTrailCount != null
+      ? String(proofStats.proofTrailCount)
+      : String(totalProofs);
+  }
+
+  if (!totalProofs) {
+    el.innerHTML = `<div class="no-proof">
+      <div class="no-proof-badge">NO PROOFS</div>
+      <div class="no-proof-text">No 0G proofs detected yet. Run a cycle with coordination clusters to anchor proofs on-chain.</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = sessionData.proofs.map((p, i) => {
+    const ts = p.timestamp ? new Date(p.timestamp).toLocaleString() : '-';
+    const explorer = p.explorer || (p.txHash ? `https://chainscan-galileo.0g.ai/tx/${p.txHash}` : '#');
+    const rootShort = p.storageRoot ? `${String(p.storageRoot).slice(0, 12)}...` : '-';
+    const walletCount = Array.isArray(p.wallets) ? p.wallets.length : (p.walletCount || '-');
+
+    return `<div class="proof-row" style="animation-delay:${i * 70}ms">
+      <div class="proof-row-head">
+        <span class="proof-chain">${String(p.chain || selectedChain).toUpperCase()}</span>
+        <span class="proof-risk ${Number(p.riskScore || 0) >= 75 ? 'high' : ''}">${Number(p.riskScore || 0)}/100</span>
+      </div>
+      <div class="proof-row-body">
+        <div class="proof-link-line">
+          <span class="proof-label">Storage:</span>
+          <span class="proof-value">${rootShort}</span>
+        </div>
+        <div class="proof-link-line">
+          <span class="proof-label">Wallets:</span>
+          <span class="proof-value">${walletCount}</span>
+        </div>
+        <div class="proof-link-line">
+          <span class="proof-label">Time:</span>
+          <span class="proof-value">${ts}</span>
+        </div>
+        <a class="proof-explorer" href="${explorer}" target="_blank" rel="noreferrer">View on 0G Explorer</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadProofTrail() {
+  try {
+    const [trailResp, statusResp] = await Promise.all([
+      fetch('/api/proof/latest?count=5'),
+      fetch('/api/proof/status')
+    ]);
+
+    const trailData = trailResp.ok ? await trailResp.json() : { proofs: [] };
+    const statusData = statusResp.ok ? await statusResp.json() : null;
+
+    renderProofTrail(trailData.proofs || [], statusData);
+  } catch {
+    renderProofTrail([], null);
+  }
+}
+
 async function runGhostNet() {
   const btn = document.getElementById('runBtn');
   const btnText = document.getElementById('btnText');
@@ -209,6 +281,7 @@ async function runGhostNet() {
   document.getElementById('statCalls').textContent = '-';
   document.getElementById('statWallets').textContent = '-';
   document.getElementById('statClusters').textContent = '-';
+  document.getElementById('statProofs').textContent = '-';
   document.getElementById('statRuntime').textContent = '-';
   document.getElementById('timestamp').textContent = '-';
 
@@ -252,6 +325,7 @@ async function runGhostNet() {
     sessionData.timestamp = d.timestamp;
     sessionData.chain = d.chain || selectedChain;
     updateTopMeta();
+    loadProofTrail();
     btn.disabled = false;
     btnText.textContent = 'Run Analysis';
     es.close();
@@ -263,6 +337,7 @@ async function runGhostNet() {
     } catch {
       setStatus('Connection error', false);
     }
+    loadProofTrail();
     btn.disabled = false;
     btnText.textContent = 'Run Analysis';
     es.close();
@@ -292,6 +367,12 @@ async function copyBrief() {
     return `${i + 1}. ${shortAddr(o.address)} | ${(o.side || 'unknown').toUpperCase()} ${o.token || '-'} | Size: ${fmtUsd(o.sizeUsd)}`;
   });
 
+  const proofs = sessionData.proofs.slice(0, 5).map((p, i) => {
+    const chain = String(p.chain || selectedChain).toUpperCase();
+    const risk = Number(p.riskScore || 0);
+    return `${i + 1}. ${chain} | Risk: ${risk}/100 | Storage: ${String(p.storageRoot || '-').slice(0, 12)}...`;
+  });
+
   const brief = [
     `GHOSTNET BRIEF | CASE #${sessionData.caseId || '----'}`,
     `Chain: ${String(sessionData.chain || selectedChain).toUpperCase()}`,
@@ -309,7 +390,10 @@ async function copyBrief() {
     ...(clusters.length ? clusters : ['- None']),
     '',
     'Hyperliquid Overlap:',
-    ...(overlaps.length ? overlaps : ['- None'])
+    ...(overlaps.length ? overlaps : ['- None']),
+    '',
+    '0G Proof Trail:',
+    ...(proofs.length ? proofs : ['- None'])
   ].join('\n');
 
   const copyBtn = document.getElementById('copyBtn');
@@ -343,6 +427,10 @@ document.addEventListener('keydown', (event) => {
       runGhostNet();
     }
   }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadProofTrail();
 });
 
 sessionData.caseId = generateCaseId();
