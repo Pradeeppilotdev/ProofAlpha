@@ -61,6 +61,7 @@ async function runDemo() {
   const orchestrator = new ProofAlphaOrchestrator({
     rpcUrl: process.env.ZG_RPC_URL || 'https://evmrpc-testnet.0g.ai',
     storageEndpoint: process.env.ZG_STORAGE_ENDPOINT,
+    indexerRpc: process.env.ZG_INDEXER_RPC,
     registryAddress: process.env.COORDINATION_REGISTRY_ADDRESS,
     privateKey: process.env.DEPLOYER_PRIVATE_KEY,
     mainnet: process.env.ZG_MAINNET === 'true',

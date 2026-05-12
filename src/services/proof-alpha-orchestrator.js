@@ -11,8 +11,11 @@ class ProofAlphaOrchestrator {
   constructor(config = {}) {
     this.storageClient = new ZeroGStorageClient({
       storageEndpoint: config.storageEndpoint,
-      chainEndpoint: config.chainEndpoint,
+      indexerRpc: config.indexerRpc,
+      chainEndpoint: config.rpcUrl || config.chainEndpoint,
+      privateKey: config.privateKey,
       submitterAddress: config.submitterAddress,
+      mainnet: config.mainnet,
     });
 
     this.proofSubmitter = new ZeroGProofSubmitter({
@@ -35,6 +38,12 @@ class ProofAlphaOrchestrator {
     try {
       console.log('🚀 ProofAlpha Orchestrator initializing...\n');
 
+      const storageReady = await this.storageClient.initialize();
+      if (!storageReady) {
+        console.warn('⚠️  0G Storage initialization incomplete');
+        console.warn('   (Make sure DEPLOYER_PRIVATE_KEY, ZG_RPC_URL and ZG_INDEXER_RPC are set)');
+      }
+
       const proofSubmitterReady = await this.proofSubmitter.initialize();
 
       if (!proofSubmitterReady) {
@@ -42,10 +51,14 @@ class ProofAlphaOrchestrator {
         console.warn('   (Make sure DEPLOYER_PRIVATE_KEY and COORDINATION_REGISTRY_ADDRESS are set)');
       }
 
-      this.isInitialized = true;
-      console.log('✅ ProofAlpha ready\n');
+      this.isInitialized = storageReady && proofSubmitterReady;
+      if (this.isInitialized) {
+        console.log('✅ ProofAlpha ready\n');
+      } else {
+        console.warn('⚠️  ProofAlpha partially configured\n');
+      }
 
-      return true;
+      return this.isInitialized;
     } catch (error) {
       console.error('❌ Orchestrator initialization failed:', error.message);
       return false;
@@ -183,6 +196,7 @@ class ProofAlphaOrchestrator {
       initialized: this.isInitialized,
       signerAddress: this.proofSubmitter.getSignerAddress(),
       registryAddress: this.config.registryAddress,
+      storage: this.storageClient.getStatus(),
       proofsCached: this.proofCache.size,
       submissionHistory: this.proofSubmitter.getSubmissionHistory(),
       network: this.proofSubmitter.isTestnet ? 'Testnet' : 'Mainnet',

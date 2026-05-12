@@ -14,8 +14,7 @@ class ZeroGStorageClient {
     this.mainnet = Boolean(config.mainnet);
     this.storageEndpoint = config.storageEndpoint || 'https://rpc-storage-testnet.0g.ai';
     this.indexerRpc = config.indexerRpc
-      || config.storageEndpoint
-      || (this.mainnet ? null : 'https://indexer-storage-testnet-turbo.0g.ai');
+      || (this.mainnet ? 'https://indexer-storage.0g.ai' : 'https://indexer-storage-testnet-turbo.0g.ai');
     this.chainEndpoint = config.chainEndpoint
       || config.rpcUrl
       || (this.mainnet ? 'https://evmrpc.0g.ai' : 'https://evmrpc-testnet.0g.ai');
@@ -37,9 +36,6 @@ class ZeroGStorageClient {
     try {
       if (!this.privateKey) {
         throw new Error('DEPLOYER_PRIVATE_KEY is required for 0G Storage uploads');
-      }
-      if (!this.indexerRpc) {
-        throw new Error('ZG_INDEXER_RPC is required (especially for mainnet uploads)');
       }
 
       const sdk = await import('@0glabs/0g-ts-sdk');

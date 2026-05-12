@@ -21,6 +21,7 @@
     "deploy:contract": "npx hardhat run scripts/deploy.js --network zero_g_testnet",
     "deploy:mainnet": "npx hardhat run scripts/deploy.js --network zero_g_mainnet",
     "proofAlpha:demo": "node scripts/proofAlpha-demo.js",
+    "bulk:proof": "node scripts/bulk-proof.js",
     "setup:proofalpha": "bash scripts/setup-proofalpha.sh"
   },
   "keywords": [
