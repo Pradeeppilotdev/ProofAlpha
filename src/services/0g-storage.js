@@ -4,9 +4,6 @@
  */
 
 const crypto = require('crypto');
-const fs = require('fs/promises');
-const os = require('os');
-const path = require('path');
 const { ethers } = require('ethers');
 
 class ZeroGStorageClient {
@@ -24,7 +21,7 @@ class ZeroGStorageClient {
     this.provider = null;
     this.signer = null;
     this.indexer = null;
-    this.ZgFile = null;
+    this.MemData = null;
     this.isInitialized = false;
   }
 
@@ -38,12 +35,12 @@ class ZeroGStorageClient {
         throw new Error('DEPLOYER_PRIVATE_KEY is required for 0G Storage uploads');
       }
 
-      const sdk = await import('@0glabs/0g-ts-sdk');
+      const sdk = await import('@0gfoundation/0g-ts-sdk');
       const Indexer = sdk.Indexer || sdk.default?.Indexer;
-      this.ZgFile = sdk.ZgFile || sdk.default?.ZgFile;
+      this.MemData = sdk.MemData || sdk.default?.MemData;
 
-      if (!Indexer || !this.ZgFile) {
-        throw new Error('Failed to load Indexer/ZgFile from @0glabs/0g-ts-sdk');
+      if (!Indexer || !this.MemData) {
+        throw new Error('Failed to load Indexer/MemData from @0gfoundation/0g-ts-sdk');
       }
 
       this.provider = new ethers.JsonRpcProvider(this.chainEndpoint);
@@ -64,7 +61,7 @@ class ZeroGStorageClient {
   }
 
   async ensureInitialized() {
-    if (this.isInitialized && this.indexer && this.signer && this.ZgFile) {
+    if (this.isInitialized && this.indexer && this.signer && this.MemData) {
       return true;
     }
     return this.initialize();
@@ -119,9 +116,6 @@ class ZeroGStorageClient {
    * @returns {Promise<{storageRoot: string, metadata: Object}>}
    */
   async uploadProofToStorage(proofBundle) {
-    let tempPath = null;
-    let file = null;
-
     try {
       const ready = await this.ensureInitialized();
       if (!ready) {
@@ -131,15 +125,10 @@ class ZeroGStorageClient {
       console.log('📤 Uploading proof bundle to 0G Storage...');
 
       const serialized = JSON.stringify(proofBundle, null, 2);
-      tempPath = path.join(
-        os.tmpdir(),
-        `proofalpha-${Date.now()}-${crypto.randomUUID()}.json`
-      );
-      await fs.writeFile(tempPath, serialized, 'utf8');
-
-      file = await this.ZgFile.fromFilePath(tempPath);
+      const bytes = new TextEncoder().encode(serialized);
+      const memData = new this.MemData(bytes);
       const [uploadResult, uploadError] = await this.indexer.upload(
-        file,
+        memData,
         this.chainEndpoint,
         this.signer
       );
@@ -170,7 +159,7 @@ class ZeroGStorageClient {
         storageRoot,
         uploadTxHash,
         metadata: {
-          size: Buffer.byteLength(serialized),
+          size: bytes.length,
           clusterSize: proofBundle.wallets.length,
           riskScore: proofBundle.riskScore,
           uploadedAt,
@@ -185,13 +174,6 @@ class ZeroGStorageClient {
         success: false,
         error: error.message,
       };
-    } finally {
-      if (file && typeof file.close === 'function') {
-        await file.close();
-      }
-      if (tempPath) {
-        await fs.unlink(tempPath).catch(() => {});
-      }
     }
   }
 
