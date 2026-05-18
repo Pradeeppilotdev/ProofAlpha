@@ -4,6 +4,8 @@
 
 Built for the **#NansenCLI Hackathon** | Powered by [Nansen CLI](https://agents.nansen.ai)
 
+> **ProofAlpha status:** 319 proofs have run so far.
+
 ---
 
 ## What is HackoBot?
